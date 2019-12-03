@@ -94,6 +94,7 @@ func UpdateCustomer(id int, r *http.Request) (*Customer, *Error) {
 
 	// sqlStatement = `SELECT * FROM "User" WHERE ID = $1;`
 	// _ = db.QueryRow(sqlStatement, id).Scan(&user.ID, &user.Name, &user.Age)
+	customer.ID = id
 	return &customer, nil
 }
 

@@ -33,6 +33,7 @@ func main() {
 func CreateModels() {
 	CreateCustomerModel()
 	CreateItemModel()
+	CreateShopModel()
 }
 
 func ConnectToDatabase() *sql.DB {

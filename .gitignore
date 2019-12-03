@@ -1,6 +1,7 @@
 #Server
 config.json
-Server
+Server/Server
+Server/Server.exe
 
 # Built application files
 *.apk

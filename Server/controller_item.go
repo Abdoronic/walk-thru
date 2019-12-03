@@ -91,6 +91,7 @@ func UpdateItem(id int, r *http.Request) (*Item, *Error) {
 	if err != nil {
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
+	item.ID = id
 	return &item, nil
 }
 

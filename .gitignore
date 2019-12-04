@@ -2,6 +2,7 @@
 config.json
 Server/Server
 Server/Server.exe
+Server/vendor/github.com
 
 # Built application files
 *.apk

@@ -14,7 +14,7 @@ import (
 
 type Config struct {
 	Host     string `json:"host"`
-	Port     int    `json:"port"`
+	Port     string `json:"port"`
 	User     string `json:"user"`
 	Password string `json:"password"`
 	DbName   string `json:"dbName"`
@@ -33,22 +33,33 @@ func main() {
 func CreateModels() {
 	CreateCustomerModel()
 	CreateItemModel()
-  CreateShopModel()
+	CreateShopModel()
 	CreateOrderModel()
 }
 
-func ConnectToDatabase() *sql.DB {
-	jsonFile, err := os.Open("config.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
+func GetConfig() *Config {
 	var cfg Config
-	json.Unmarshal(byteValue, &cfg)
+	if value := os.Getenv("DATABASE_HOST"); value != "" {
+		cfg.Host = os.Getenv("DATABASE_HOST")
+		cfg.DbName = os.Getenv("DATABASE_DBNAME")
+		cfg.Port = os.Getenv("DATABASE_PORT")
+		cfg.User = os.Getenv("DATABASE_USER")
+		cfg.Password = os.Getenv("DATABASE_PASSWORD")
+	} else {
+		jsonFile, err := os.Open("config.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer jsonFile.Close()
+		byteValue, _ := ioutil.ReadAll(jsonFile)
+		json.Unmarshal(byteValue, &cfg)
+	}
+	return &cfg
+}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
+func ConnectToDatabase() *sql.DB {
+	cfg := GetConfig()
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DbName)
 
 	db, err := sql.Open("postgres", psqlInfo)

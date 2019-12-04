@@ -35,6 +35,10 @@ func CreateModels() {
 	CreateItemModel()
 	CreateShopModel()
 	CreateOrderModel()
+	CreateOfferModel()
+	CreateContainModel()
+	CreateReceiveModel()
+	CreateCreateModel()
 }
 
 func GetConfig() *Config {

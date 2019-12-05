@@ -20,7 +20,7 @@ func GetOrders() []Order {
 
 	var allOrders []Order
 	for orders.Next() {
-		err = orders.Scan(&order.ID, &order.Delivered, &order.Price)
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func GetOrder(id int) (*Order, *Error) {
 	defer db.Close()
 
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price)
+	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
@@ -51,11 +51,18 @@ func CreateOrder(r *http.Request) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 
-	//var id int
-	sqlStatement := `
-	INSERT INTO "Order" (Delivered, Price)
-	VALUES ($1, $2) RETURNING ID, Delivered, Price`
-	err = db.QueryRow(sqlStatement, order.Delivered, order.Price).Scan(&order.ID, &order.Delivered, &order.Price)
+	var sqlStatement string
+	if order.Date == "" {
+		sqlStatement = `
+		INSERT INTO "Order" (Delivered, Price, CustomerID, ShopID)
+		VALUES ($1, $2, $3, $4) RETURNING ID, Delivered, Price, Date, CustomerID, ShopID`
+		err = db.QueryRow(sqlStatement, order.Delivered, order.Price, order.CustomerID, order.ShopID).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+	} else {
+		sqlStatement = `
+		INSERT INTO "Order" (Delivered, Price, Date, CustomerID, ShopID)
+		VALUES ($1, $2, $3, $4, $5) RETURNING ID, Delivered, Price, Date, CustomerID, ShopID`
+		err = db.QueryRow(sqlStatement, order.Delivered, order.Price, order.Date, order.CustomerID, order.ShopID).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+	}
 	if err != nil {
 		log.Fatal(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
@@ -75,16 +82,16 @@ func UpdateOrder(id int, r *http.Request) (*Order, *Error) {
 	err := json.NewDecoder(r.Body).Decode(&order)
 
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
-	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Delivered, &temp.Price)
+	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Delivered, &temp.Price, &temp.Date, &temp.CustomerID, &temp.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
 	sqlStatement = `
 		UPDATE "Order" 
-		SET Delivered = $2, Price = $3
+		SET Delivered = $2, Price = $3, Date = $4, CustomerID = $5, ShopID = $6
 		WHERE id = $1;`
-	_, err = db.Exec(sqlStatement, id, order.Delivered, order.Price)
+	_, err = db.Exec(sqlStatement, id, order.Delivered, order.Price, order.Date, order.CustomerID, order.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
@@ -98,7 +105,7 @@ func DeleteOrder(id int) (*Order, *Error) {
 
 	var order Order
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price)
+	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}

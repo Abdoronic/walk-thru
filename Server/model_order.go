@@ -3,9 +3,12 @@ package main
 import "log"
 
 type Order struct {
-	ID        int     `json:"id"`
-	Delivered bool    `json:"Delivered"`
-	Price     float64 `json:"price"`
+	ID         int     `json:"id"`
+	Delivered  bool    `json:"delivered"`
+	Price      float64 `json:"price"`
+	Date       string  `json:"date"`
+	CustomerID int     `json:"customerID"`
+	ShopID     int     `json:"shopID"`
 }
 
 func CreateOrderModel() {
@@ -16,7 +19,12 @@ func CreateOrderModel() {
 		CREATE TABLE IF NOT EXISTS "Order" (
 		ID SERIAL PRIMARY KEY,
 		Delivered BOOLEAN DEFAULT FALSE,
-		Price float(4)  NOT NULL
+		Price float(4)  NOT NULL,
+		Date DATE DEFAULT CURRENT_TIMESTAMP,
+		CustomerID SERIAL,
+		ShopID SERIAL,
+		FOREIGN KEY (CustomerID) REFERENCES Customer(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+		FOREIGN KEY (ShopID) REFERENCES Shop(ID) ON DELETE CASCADE ON UPDATE CASCADE
 		);
 	`)
 

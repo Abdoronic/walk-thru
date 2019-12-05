@@ -27,6 +27,7 @@ func main() {
 	cfg := GetConfig()
 
 	CreateModels()
+	//DropModels()
 
 	router := CreateRouter()
 
@@ -36,13 +37,25 @@ func main() {
 
 func CreateModels() {
 	CreateCustomerModel()
-	CreateItemModel()
 	CreateShopModel()
+	CreateItemModel()
 	CreateOrderModel()
-	CreateOfferModel()
 	CreateContainModel()
-	CreateReceiveModel()
-	CreateCreateModel()
+}
+func DropModels() {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `DROP Table IF EXISTS Contain;
+	DROP Table IF EXISTS "Order";
+	DROP Table IF EXISTS Item;
+	DROP Table IF EXISTS Shop;
+	DROP Table IF EXISTS Customer;`
+
+	_, err := db.Exec(sqlStatement)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func GetConfig() *Config {

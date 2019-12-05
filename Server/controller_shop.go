@@ -115,3 +115,49 @@ func DeleteShop(id int) (*Shop, *Error) {
 	}
 	return &shop, nil
 }
+
+func ViewPendingOrders(id int) []Order {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = false;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrders = append(allOrders, order)
+	}
+	return allOrders
+}
+
+func ViewDeliveredOrders(id int) []Order {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = true;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrders = append(allOrders, order)
+	}
+	return allOrders
+}

@@ -1,14 +1,17 @@
 package main
 
-import "log"
+import (
+	"database/sql"
+	"log"
+)
 
 type Order struct {
-	ID         int     `json:"id"`
-	Delivered  bool    `json:"delivered"`
-	Price      float64 `json:"price"`
-	Date       string  `json:"date"`
-	CustomerID int     `json:"customerID"`
-	ShopID     int     `json:"shopID"`
+	ID         int           `json:"id"`
+	Delivered  bool          `json:"delivered"`
+	Price      float64       `json:"price"`
+	Date       string        `json:"date"`
+	CustomerID int           `json:"customerID"`
+	ShopID     sql.NullInt64 `json:"shopID"`
 }
 
 func CreateOrderModel() {
@@ -22,7 +25,7 @@ func CreateOrderModel() {
 		Price float(4)  NOT NULL,
 		Date DATE DEFAULT CURRENT_TIMESTAMP,
 		CustomerID SERIAL,
-		ShopID SERIAL,
+		ShopID INT,
 		FOREIGN KEY (CustomerID) REFERENCES Customer(ID) ON DELETE CASCADE ON UPDATE CASCADE,
 		FOREIGN KEY (ShopID) REFERENCES Shop(ID) ON DELETE CASCADE ON UPDATE CASCADE
 		);

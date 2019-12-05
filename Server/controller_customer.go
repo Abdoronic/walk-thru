@@ -118,25 +118,25 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 	return &customer, nil
 }
 
-func ViewShops() []string {
-	var shop Shop
+func ViewItems(id int) []Item {
+	var item Item
 	db := ConnectToDatabase()
 	defer db.Close()
 
-	sqlStatement := `SELECT * FROM Shop;`
-	shops, err := db.Query(sqlStatement)
+	sqlStatement := `SELECT * FROM Item WHERE ShopID = $1;`
+	items, err := db.Query(sqlStatement, id)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer shops.Close()
+	defer items.Close()
 
-	var allShops []string
-	for shops.Next() {
-		err = shops.Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
+	var allItems []Item
+	for items.Next() {
+		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		allShops = append(allShops, shop.Name)
+		allItems = append(allItems, item)
 	}
-	return allShops
+	return allItems
 }

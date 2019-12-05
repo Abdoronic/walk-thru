@@ -71,6 +71,39 @@ func DeleteShopHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(deletedShop)
 }
 
+func ShopAddItemHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var addedItem, addError = ShopAddItem(id, r)
+	if addError != nil {
+		ErrorHandler(addError.Error, addError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(addedItem)
+}
+
+func ShopDeleteItemHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	id, errShopID := strconv.Atoi(params["id"])
+	itemID, errItemID := strconv.Atoi(params["itemID"])
+	if errShopID != nil || errItemID != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var deletedItem, deleteError = ShopDeleteItem(id, itemID, r)
+	if deleteError != nil {
+		ErrorHandler(deleteError.Error, deleteError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(deletedItem)
+}
+
 func ViewPendingOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)

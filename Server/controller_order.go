@@ -102,7 +102,6 @@ func UpdateOrder(id int, r *http.Request) (*Order, *Error) {
 func DeleteOrder(id int) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
-
 	var order Order
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
 	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)

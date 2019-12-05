@@ -140,7 +140,7 @@ func ShopAddItem(id int, r *http.Request) (*Item, *Error) {
 	return addedItem, nil
 }
 
-// As a Shop i can Add an item.
+// As a Shop i can Delete an item.
 func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -157,4 +157,50 @@ func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
 		return nil, deleteError
 	}
 	return deletedItem, nil
+}
+
+func ViewPendingOrders(id int) []Order {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = false;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrders = append(allOrders, order)
+	}
+	return allOrders
+}
+
+func ViewDeliveredOrders(id int) []Order {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = true;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrders = append(allOrders, order)
+	}
+	return allOrders
 }

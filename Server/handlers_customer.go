@@ -71,7 +71,13 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(deletedCustomer)
 }
 
-func ViewShopsHandler(w http.ResponseWriter, r *http.Request) {
+func ViewItemsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ViewShops())
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(ViewItems(id))
 }

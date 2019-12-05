@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -133,4 +135,30 @@ func ViewItems(id int) []Item {
 		allItems = append(allItems, item)
 	}
 	return allItems
+}
+
+// As a Customer i can create an Order.
+func CustomerCreateOrder(id int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var order Order
+	err := json.NewDecoder(r.Body).Decode(&order)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	order.CustomerID = id
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+
+	createdOrder, createError := CreateOrder(r)
+	if createError != nil {
+		return nil, createError
+	}
+	return createdOrder, nil
 }

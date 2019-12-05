@@ -9,6 +9,7 @@ type Item struct {
 	Price       float64 `json:"price"`
 	Description string  `json:"description"`
 	ImageURL    string  `json:"imageURL"`
+	ShopID      int     `json:"shopID"`
 }
 
 func CreateItemModel() {
@@ -22,7 +23,9 @@ func CreateItemModel() {
 		Type VARCHAR(255) NOT NULL,
 		Price float(4)  NOT NULL,
 		Description VARCHAR(255) NOT NULL,
-		ImageURL VARCHAR(255) NOT NULL
+		ImageURL VARCHAR(255) NOT NULL,
+		ShopID SERIAL,
+		FOREIGN KEY (ShopID) REFERENCES Shop(ID) ON DELETE CASCADE ON UPDATE CASCADE
 		);
 	`)
 

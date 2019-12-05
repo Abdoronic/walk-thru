@@ -20,7 +20,7 @@ func GetItems() []Item {
 
 	var allItems []Item
 	for items.Next() {
-		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL)
+		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func GetItem(id int) (*Item, *Error) {
 	defer db.Close()
 
 	sqlStatement := `SELECT * FROM Item WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL)
+	err := db.QueryRow(sqlStatement, id).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
@@ -52,9 +52,9 @@ func CreateItem(r *http.Request) (*Item, *Error) {
 	defer db.Close()
 
 	sqlStatement := `
-	INSERT INTO Item (Name, Type, Price, Description, ImageURL)
-	VALUES ($1, $2, $3, $4, $5) RETURNING ID, Name, Type, Price, Description, ImageURL`
-	err = db.QueryRow(sqlStatement, item.Name, item.Type, item.Price, item.Description, item.ImageURL).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL)
+	INSERT INTO Item (Name, Type, Price, Description, ImageURL, ShopID)
+	VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID, Name, Type, Price, Description, ImageURL, ShopID`
+	err = db.QueryRow(sqlStatement, item.Name, item.Type, item.Price, item.Description, item.ImageURL, item.ShopID).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 	if err != nil {
 		log.Fatal(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
@@ -74,16 +74,16 @@ func UpdateItem(id int, r *http.Request) (*Item, *Error) {
 	err := json.NewDecoder(r.Body).Decode(&item)
 
 	sqlStatement := `SELECT * FROM Item WHERE ID = $1;`
-	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Name, &temp.Type, &temp.Price, &temp.Description, &temp.ImageURL)
+	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Name, &temp.Type, &temp.Price, &temp.Description, &temp.ImageURL, &temp.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
 	sqlStatement = `
 		UPDATE Item 
-		SET Name = $2, Type = $3, Price = $4, Description = $5, ImageURL = $6
+		SET Name = $2, Type = $3, Price = $4, Description = $5, ImageURL = $6, ShopID = $7
 		WHERE id = $1;`
-	_, err = db.Exec(sqlStatement, id, item.Name, item.Type, item.Price, item.Description, item.ImageURL)
+	_, err = db.Exec(sqlStatement, id, item.Name, item.Type, item.Price, item.Description, item.ImageURL, item.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
@@ -97,7 +97,7 @@ func DeleteItem(id int) (*Item, *Error) {
 
 	var item Item
 	sqlStatement := `SELECT * FROM Item WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL)
+	err := db.QueryRow(sqlStatement, id).Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}

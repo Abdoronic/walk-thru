@@ -13,21 +13,25 @@ import (
 )
 
 type Config struct {
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-	DbName   string `json:"dbName"`
+	DBHost     string `json:"dbHost"`
+	DBPort     string `json:"dbPort"`
+	DBUser     string `json:"dbUser"`
+	DBPassword string `json:"dbPassword"`
+	DBName     string `json:"dbName"`
+	WebHost    string `json:"webHost"`
+	WebPort    string `json:"webPort"`
 }
 
 func main() {
+
+	cfg := GetConfig()
 
 	CreateModels()
 
 	router := CreateRouter()
 
-	fmt.Println("Listening on Port: 8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	fmt.Println("Listening on " + cfg.WebHost + "Port: " + cfg.WebPort)
+	log.Fatal(http.ListenAndServe(cfg.WebHost+":"+cfg.WebPort, router))
 }
 
 func CreateModels() {
@@ -44,11 +48,13 @@ func CreateModels() {
 func GetConfig() *Config {
 	var cfg Config
 	if value := os.Getenv("DATABASE_HOST"); value != "" {
-		cfg.Host = os.Getenv("DATABASE_HOST")
-		cfg.DbName = os.Getenv("DATABASE_DBNAME")
-		cfg.Port = os.Getenv("DATABASE_PORT")
-		cfg.User = os.Getenv("DATABASE_USER")
-		cfg.Password = os.Getenv("DATABASE_PASSWORD")
+		cfg.DBHost = os.Getenv("DATABASE_HOST")
+		cfg.DBName = os.Getenv("DATABASE_DBNAME")
+		cfg.DBPort = os.Getenv("DATABASE_PORT")
+		cfg.DBUser = os.Getenv("DATABASE_USER")
+		cfg.DBPassword = os.Getenv("DATABASE_PASSWORD")
+		cfg.WebHost = os.Getenv("WEB_HOST")
+		cfg.WebPort = os.Getenv("WEB_PORT")
 	} else {
 		jsonFile, err := os.Open("config.json")
 		if err != nil {
@@ -64,7 +70,7 @@ func GetConfig() *Config {
 func ConnectToDatabase() *sql.DB {
 	cfg := GetConfig()
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DbName)
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {

@@ -1,14 +1,17 @@
 package main
 
-import "log"
+import (
+	"database/sql"
+	"log"
+)
 
 type Order struct {
-	ID         int     `json:"id"`
-	Delivered  bool    `json:"delivered"`
-	Price      float64 `json:"price"`
-	Date       string  `json:"date"`
-	CustomerID int     `json:"customerID"`
-	ShopID     int     `json:"shopID"`
+	ID         int           `json:"id"`
+	Delivered  bool          `json:"delivered"`
+	Price      float64       `json:"price"`
+	Date       string        `json:"date"`
+	CustomerID int           `json:"customerID"`
+	ShopID     sql.NullInt64 `json:"shopID"`
 }
 
 func CreateOrderModel() {

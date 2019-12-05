@@ -140,3 +140,26 @@ func ViewShops() []string {
 	}
 	return allShops
 }
+
+func ViewItems(id int) []Item {
+	var item Item
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM Item WHERE ShopID = $1;`
+	items, err := db.Query(sqlStatement, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer items.Close()
+
+	var allItems []Item
+	for items.Next() {
+		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allItems = append(allItems, item)
+	}
+	return allItems
+}

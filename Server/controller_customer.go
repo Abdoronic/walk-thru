@@ -51,7 +51,6 @@ func CreateCustomer(r *http.Request) (*Customer, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 
-	//var id int
 	sqlStatement := `
 	INSERT INTO Customer (Email, FirstName, LastName, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV)
 	VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID, Email, FirstName, LastName, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV`
@@ -60,9 +59,6 @@ func CreateCustomer(r *http.Request) (*Customer, *Error) {
 		log.Fatal(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
 	}
-
-	// sqlStatement = `SELECT * FROM "User" WHERE ID = $1;`
-	// _ = db.QueryRow(sqlStatement, id).Scan(&user.ID, &user.Name, &user.Age)
 
 	return &customer, nil
 }
@@ -92,8 +88,6 @@ func UpdateCustomer(id int, r *http.Request) (*Customer, *Error) {
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
 
-	// sqlStatement = `SELECT * FROM "User" WHERE ID = $1;`
-	// _ = db.QueryRow(sqlStatement, id).Scan(&user.ID, &user.Name, &user.Age)
 	customer.ID = id
 	return &customer, nil
 }

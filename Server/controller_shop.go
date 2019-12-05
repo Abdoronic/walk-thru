@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -51,7 +53,6 @@ func CreateShop(r *http.Request) (*Shop, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 
-	//var id int
 	sqlStatement := `
 	INSERT INTO Shop (Name, Location, AdminUsername, AdminPassword)
 	VALUES ($1, $2, $3, $4) RETURNING ID, Name, Location, AdminUsername, AdminPassword`
@@ -60,9 +61,6 @@ func CreateShop(r *http.Request) (*Shop, *Error) {
 		log.Fatal(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
 	}
-
-	// sqlStatement = `SELECT * FROM "User" WHERE ID = $1;`
-	// _ = db.QueryRow(sqlStatement, id).Scan(&user.ID, &user.Name, &user.Age)
 
 	return &shop, nil
 }
@@ -114,4 +112,49 @@ func DeleteShop(id int) (*Shop, *Error) {
 		return nil, &Error{Status: 500, Error: "Error Deleting Data"}
 	}
 	return &shop, nil
+}
+
+// As a Shop i can Add an item.
+func ShopAddItem(id int, r *http.Request) (*Item, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var item Item
+	err := json.NewDecoder(r.Body).Decode(&item)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	item.ShopID = id
+	modifiedBody, err := json.Marshal(item)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+
+	addedItem, addError := CreateItem(r)
+	if addError != nil {
+		return nil, addError
+	}
+	return addedItem, nil
+}
+
+// As a Shop i can Add an item.
+func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	item, getError := GetItem(itemID)
+	if getError != nil {
+		return nil, getError
+	}
+	if item.ShopID != id {
+		return nil, &Error{Status: 401, Error: "Unauthorized Access"}
+	}
+	deletedItem, deleteError := DeleteItem(itemID)
+	if deleteError != nil {
+		return nil, deleteError
+	}
+	return deletedItem, nil
 }

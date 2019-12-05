@@ -117,3 +117,26 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 	}
 	return &customer, nil
 }
+
+func ViewShops() []string {
+	var shop Shop
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM Shop;`
+	shops, err := db.Query(sqlStatement)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer shops.Close()
+
+	var allShops []string
+	for shops.Next() {
+		err = shops.Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allShops = append(allShops, shop.Name)
+	}
+	return allShops
+}

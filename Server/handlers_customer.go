@@ -70,3 +70,8 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(deletedCustomer)
 }
+
+func ViewShopsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ViewShops())
+}

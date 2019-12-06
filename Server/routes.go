@@ -20,6 +20,8 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/customers/viewItems/{id}", ViewItemsHandler).Methods("GET")
 	router.HandleFunc("/customers/viewOrderItems/{orderID}", ViewOrderItemsHandler).Methods("GET")
 	router.HandleFunc("/customers/{id}/createOrder", CustomerCreateOrderHandler).Methods("POST")
+	router.HandleFunc("/customers/{id}/addItem/{orderID}/{itemID}", CustomerAddItemHandler).Methods("PUT")
+	router.HandleFunc("/customers/{id}/removeItem/{orderID}/{itemID}", CustomerRemoveItemHandler).Methods("PUT")
 
 	router.HandleFunc("/customers/{customerID}/checkout/{orderID}/{shopID}", CheckoutHandler).Methods("POST")
 

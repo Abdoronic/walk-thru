@@ -125,3 +125,20 @@ func ViewDeliveredOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(ViewDeliveredOrders(id))
 }
+
+func DeliverOrderHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	orderID, errorderID := strconv.Atoi(params["orderID"])
+	shopID, errShopID := strconv.Atoi(params["shopID"])
+	if errorderID != nil || errShopID != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var DeliverOrderError = DeliverOrder(orderID, shopID)
+	if DeliverOrderError != nil {
+		ErrorHandler(DeliverOrderError.Error, DeliverOrderError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(DeliverOrder)
+}

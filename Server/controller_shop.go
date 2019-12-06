@@ -204,3 +204,21 @@ func ViewDeliveredOrders(id int) []Order {
 	}
 	return allOrders
 }
+
+func DeliverOrder(orderID int, shopID int) *Error {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var order Order
+	sqlStatement := `
+		UPDATE "Order" 
+		SET Delivered = true
+		WHERE ID = $1 AND ShopID = $2;`
+	_, err := db.Exec(sqlStatement, orderID, shopID)
+	if err != nil {
+		return &Error{Status: 400, Error: "Invalid Data"}
+	}
+	order.ID = orderID
+	return nil
+
+}

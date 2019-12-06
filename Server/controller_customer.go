@@ -3,9 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/charge"
+	"github.com/stripe/stripe-go/token"
 )
 
 func GetCustomers() []Customer {
@@ -161,4 +167,132 @@ func CustomerCreateOrder(id int, r *http.Request) (*Order, *Error) {
 		return nil, createError
 	}
 	return createdOrder, nil
+}
+
+func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order, *Error) {
+	stripe.Key = GetConfig().StripeKey
+
+	order, orderError := GetOrder(orderID)
+	if orderError != nil {
+		return nil, orderError
+	}
+
+	_, shopError := GetShop(shopID)
+	if shopError != nil {
+		return nil, shopError
+	}
+
+	customer, customerError := GetCustomer(customerID)
+	if customerError != nil {
+		return nil, customerError
+	}
+
+	if int(order.CustomerID) != customerID {
+		return nil, &Error{Status: 400, Error: "Order doesn't belong to customer"}
+	}
+
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var (
+		orderItemIDs []int
+		shopItemIDs  []int
+	)
+
+	sqlStatement := `
+		SELECT ItemID FROM Contain
+		WHERE OrderID = $1
+	`
+	orderItemIDsIterator, orderReadError := db.Query(sqlStatement, orderID)
+	if orderReadError != nil {
+		log.Fatal(orderReadError)
+	}
+	defer orderItemIDsIterator.Close()
+
+	for orderItemIDsIterator.Next() {
+		var itemID int
+		err := orderItemIDsIterator.Scan(&itemID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		orderItemIDs = append(orderItemIDs, itemID)
+	}
+
+	sqlStatement = `
+		SELECT ID FROM Item
+		WHERE ShopID = $1
+	`
+	shopItemIDsIterator, shopReadError := db.Query(sqlStatement, shopID)
+	if shopReadError != nil {
+		log.Fatal(shopReadError)
+	}
+	defer shopItemIDsIterator.Close()
+
+	for shopItemIDsIterator.Next() {
+		var itemID int
+		err := shopItemIDsIterator.Scan(&itemID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		shopItemIDs = append(shopItemIDs, itemID)
+	}
+
+	for i := 0; i < len(orderItemIDs); i++ {
+		contain := false
+		for j := 0; j < len(shopItemIDs); j++ {
+			if orderItemIDs[j] == shopItemIDs[i] {
+				contain = true
+				break
+			}
+		}
+		if !contain {
+			return nil, &Error{Status: 400, Error: "Order Items must be from same shop"}
+		}
+	}
+
+	//Start Payment
+	cardParams := &stripe.TokenParams{
+		Card: &stripe.CardParams{
+			Number:   stripe.String(strconv.Itoa(customer.CreditCardNumber)),
+			ExpMonth: stripe.String(customer.CreditCardExpiryDate[:2]),
+			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:]),
+			CVC:      stripe.String(strconv.Itoa(customer.CreditCardCVV))},
+		// Number:   stripe.String("4242424242424242"),
+		// ExpMonth: stripe.String("12"),
+		// ExpYear:  stripe.String("20"),
+		// CVC:      stripe.String("123")},
+	}
+	cardToken, err := token.New(cardParams)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, &Error{Status: 500, Error: "Invaild credit card info"}
+	}
+
+	params := &stripe.ChargeParams{
+		Amount:      stripe.Int64(int64(order.Price * 100)),
+		Currency:    stripe.String(string(stripe.CurrencyEGP)),
+		Description: stripe.String("Order Payment"),
+	}
+	params.SetSource(cardToken.ID)
+
+	_, err = charge.New(params)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, &Error{Status: 500, Error: "Failed Transaction"}
+	}
+
+	//Mark order as recieved
+	sqlStatement = `
+		UPDATE "Order" 
+		SET ShopID = $2
+		WHERE id = $1;`
+	_, err = db.Exec(sqlStatement, orderID, shopID)
+	if err != nil {
+		return nil, &Error{Status: 400, Error: "Couldn't mark order as recieved"}
+	}
+
+	order, _ = GetOrder(orderID)
+	return order, nil
 }

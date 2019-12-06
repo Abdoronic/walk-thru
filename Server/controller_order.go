@@ -117,3 +117,37 @@ func DeleteOrder(id int) (*Order, *Error) {
 	}
 	return &order, nil
 }
+
+func ViewOrderItems(orderID int) ([]Item, *Error) {
+	var item Item
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	_, orderReadError := GetOrder(orderID)
+	if orderReadError != nil {
+		return nil, orderReadError
+	}
+
+	sqlStatement := `
+		SELECT I.ID, I.Name, I.Type, I.Price, I.Description, I.ImageURL, I.ShopID
+		FROM Item I INNER JOIN Contain C ON I.ID = C.ItemID
+		WHERE C.OrderID = $1;
+	`
+	items, err := db.Query(sqlStatement, orderID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer items.Close()
+
+	var allItems []Item
+	for items.Next() {
+		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allItems = append(allItems, item)
+	}
+	return allItems, nil
+
+}

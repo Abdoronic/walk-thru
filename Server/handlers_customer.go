@@ -98,6 +98,54 @@ func CustomerCreateOrderHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(createdOrder)
 }
 
+func ViewOrderItemsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	orderID, err := strconv.Atoi(params["orderID"])
+	if err != nil {
+		ErrorHandler("Invalid Order ID", 400, w, r)
+		return
+	}
+	items, viewError := ViewOrderItems(orderID)
+	if viewError != nil {
+		ErrorHandler(viewError.Error, viewError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(items)
+}
+
+func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	var (
+		customerID int
+		orderID    int
+		shopID     int
+		err        error
+	)
+	customerID, err = strconv.Atoi(params["customerID"])
+	if err != nil {
+		ErrorHandler("Invalid Customer ID", 400, w, r)
+		return
+	}
+	orderID, err = strconv.Atoi(params["orderID"])
+	if err != nil {
+		ErrorHandler("Invalid Order ID", 400, w, r)
+		return
+	}
+	shopID, err = strconv.Atoi(params["shopID"])
+	if err != nil {
+		ErrorHandler("Invalid Shop ID", 400, w, r)
+		return
+	}
+	checkedOrder, checkoutError := Checkout(customerID, orderID, shopID, r)
+	if err != nil {
+		ErrorHandler(checkoutError.Error, checkoutError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(checkedOrder)
+}
+
 func CustomerAddItemHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)

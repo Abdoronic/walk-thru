@@ -10,5 +10,6 @@ services:
         DATABASE_USER: "aadwntslsoyomv"
         DATABASE_PASSWORD: "94b234360b310b0f6c9e199b3f32ebd31d5356d4c048c59acafe384fe5461a99"
         DATABASE_DBNAME: "d3slh4obr1ipp0"
+        STRIPE_KEY: "sk_test_bggMsHQJbLkjluBrH3kZoMoM009AIVdW3f"
     ports:
       - 8000:8000

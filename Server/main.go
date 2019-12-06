@@ -20,6 +20,7 @@ type Config struct {
 	DBName     string `json:"dbName"`
 	WebHost    string `json:"webHost"`
 	WebPort    string `json:"webPort"`
+	StripeKey  string `json:"stripeKey"`
 }
 
 func main() {
@@ -68,6 +69,7 @@ func GetConfig() *Config {
 		cfg.DBPassword = os.Getenv("DATABASE_PASSWORD")
 		cfg.WebHost = os.Getenv("WEB_HOST")
 		cfg.WebPort = os.Getenv("WEB_PORT")
+		cfg.StripeKey = os.Getenv("STRIPE_KEY")
 	} else {
 		jsonFile, err := os.Open("config.json")
 		if err != nil {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -221,4 +222,31 @@ func DeliverOrder(orderID int, shopID int) *Error {
 	order.ID = orderID
 	return nil
 
+}
+
+func ShopLogin(r *http.Request) (*Shop, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	type input struct {
+		AdminUsername string `json:"adminUsername"`
+		AdminPassword string `json:"adminPassword"`
+	}
+	var body input
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var shop Shop
+	getShopSQL := `SELECT *
+	FROM Shop
+	WHERE AdminUsername = $1`
+	getShoprErr := db.QueryRow(getShopSQL, body.AdminUsername).Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
+	if getShoprErr == sql.ErrNoRows {
+		return nil, &Error{Status: 404, Error: "Username doesn't exist"}
+	}
+	if body.AdminPassword != shop.AdminPassword {
+		return nil, &Error{Status: 400, Error: "Incorrect Password"}
+	}
+	return &shop, nil
 }

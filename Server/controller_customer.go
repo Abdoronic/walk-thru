@@ -296,6 +296,7 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 
 	order, _ = GetOrder(orderID)
 	return order, nil
+}
 
 // As a Customer i can add items to my Order.
 func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {

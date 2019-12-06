@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -161,4 +162,115 @@ func CustomerCreateOrder(id int, r *http.Request) (*Order, *Error) {
 		return nil, createError
 	}
 	return createdOrder, nil
+}
+
+// As a Customer i can add items to my Order.
+func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	switch errQuery {
+	case sql.ErrNoRows:
+		{
+			// Insert into contain relation
+			createContainSQL := `INSERT INTO Contain (OrderID, ItemID, Quantity)
+				VALUES ($1, $2, $3)`
+			_, errContain := db.Exec(createContainSQL, orderID, itemID, 1)
+			if errContain != nil {
+				log.Fatal(errContain)
+			}
+		}
+	case nil:
+		{
+			// update contain relation
+			updateContainSQL := `UPDATE Contain
+			SET Quantity = $3
+			WHERE ItemID = $1 AND OrderID = $2;`
+			_, errContain := db.Exec(updateContainSQL, itemID, orderID, currentQuantity+1)
+			if errContain != nil {
+				log.Fatal(errContain)
+			}
+		}
+	default:
+		log.Fatal(errQuery)
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		return nil, errItem
+	}
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		return nil, errOrder
+	}
+	order.Price = order.Price + item.Price
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
+}
+
+// As a Customer i can remove items from my Order.
+func CustomerRemoveItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	if errQuery != nil {
+		log.Fatal(errQuery)
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		return nil, errItem
+	}
+	if currentQuantity == 1 {
+		// delete from contain relation
+		deleteContainSQL := `DELETE FROM Contain
+		WHERE ItemID = $1 AND OrderID = $2;`
+		_, errContain := db.Exec(deleteContainSQL, itemID, orderID)
+		if errContain != nil {
+			log.Fatal(errContain)
+		}
+	} else {
+		// update contain relation
+		updateContainSQL := `UPDATE Contain
+		SET Quantity = $3
+		WHERE ItemID = $1 AND OrderID = $2;`
+		_, errContain := db.Exec(updateContainSQL, itemID, orderID, currentQuantity-1)
+		if errContain != nil {
+			log.Fatal(errContain)
+		}
+	}
+
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		return nil, errOrder
+	}
+	order.Price = order.Price - item.Price
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
 }

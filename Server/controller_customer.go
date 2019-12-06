@@ -29,7 +29,7 @@ func GetCustomers() []Customer {
 
 	var allCustomers []Customer
 	for customers.Next() {
-		err = customers.Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+		err = customers.Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -44,7 +44,7 @@ func GetCustomer(id int) (*Customer, *Error) {
 	defer db.Close()
 
 	sqlStatement := `SELECT * FROM Customer WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+	err := db.QueryRow(sqlStatement, id).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
@@ -61,9 +61,9 @@ func CreateCustomer(r *http.Request) (*Customer, *Error) {
 	defer db.Close()
 
 	sqlStatement := `
-	INSERT INTO Customer (Email, FirstName, LastName, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV)
-	VALUES ($1, $2, $3, $4, $5, $6) RETURNING ID, Email, FirstName, LastName, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV`
-	err = db.QueryRow(sqlStatement, customer.Email, customer.FirstName, customer.LastName, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+	INSERT INTO Customer (Email, FirstName, LastName, Password, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV)
+	VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ID, Email, FirstName, LastName, Password, CreditCardNumber, CreditCardExpiryDate, CreditCardCVV`
+	err = db.QueryRow(sqlStatement, customer.Email, customer.FirstName, customer.LastName, customer.Password, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 	if err != nil {
 		log.Fatal(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
@@ -83,16 +83,16 @@ func UpdateCustomer(id int, r *http.Request) (*Customer, *Error) {
 	err := json.NewDecoder(r.Body).Decode(&customer)
 
 	sqlStatement := `SELECT * FROM Customer WHERE ID = $1;`
-	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Email, &temp.FirstName, &temp.LastName, &temp.CreditCardNumber, &temp.CreditCardExpiryDate, &temp.CreditCardCVV)
+	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Email, &temp.FirstName, &temp.LastName, &temp.Password, &temp.CreditCardNumber, &temp.CreditCardExpiryDate, &temp.CreditCardCVV)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
 	sqlStatement = `
 		UPDATE Customer 
-		SET Email = $2, FirstName = $3, LastName = $4, CreditCardNumber = $5, CreditCardExpiryDate = $6, CreditCardCVV = $7
+		SET Email = $2, FirstName = $3, LastName = $4, Password = $5, CreditCardNumber = $6, CreditCardExpiryDate = $7, CreditCardCVV = $8
 		WHERE id = $1;`
-	_, err = db.Exec(sqlStatement, id, customer.Email, customer.FirstName, customer.LastName, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV)
+	_, err = db.Exec(sqlStatement, id, customer.Email, customer.FirstName, customer.LastName, customer.Password, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV)
 	if err != nil {
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
@@ -107,7 +107,7 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 
 	var customer Customer
 	sqlStatement := `SELECT * FROM Customer WHERE ID = $1;`
-	err := db.QueryRow(sqlStatement, id).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+	err := db.QueryRow(sqlStatement, id).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 	if err != nil {
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
@@ -434,7 +434,7 @@ func CustomerViewOrderItems(customerID int, orderID int, r *http.Request) ([]Ord
 
 	getCustomerSQL := `SELECT * FROM Customer WHERE ID = $1;`
 	var customer Customer
-	customerErr := db.QueryRow(getCustomerSQL, customerID).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+	customerErr := db.QueryRow(getCustomerSQL, customerID).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
 	var order Order

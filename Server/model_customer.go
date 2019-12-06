@@ -7,9 +7,10 @@ type Customer struct {
 	Email                string `json:"email"`
 	FirstName            string `json:"firstName"`
 	LastName             string `json:"lastName"`
-	CreditCardNumber     int    `json:"CreditCardNumber"`
-	CreditCardExpiryDate string `json:"CreditCardExpiryDate"`
-	CreditCardCVV        int    `json:"CreditCardCVV"`
+	Password             string `json:"password"`
+	CreditCardNumber     int    `json:"creditCardNumber"`
+	CreditCardExpiryDate string `json:"creditCardExpiryDate"`
+	CreditCardCVV        int    `json:"creditCardCVV"`
 }
 
 func CreateCustomerModel() {
@@ -22,6 +23,7 @@ func CreateCustomerModel() {
 		Email VARCHAR(255) UNIQUE NOT NULL,
 		FirstName VARCHAR(255) NOT NULL,
 		LastName VARCHAR(255) NOT NULL,
+		Password VARCHAR(255) NOT NULL,
 		CreditCardNumber INT UNIQUE NOT NULL,
 		CreditCardExpiryDate DATE NOT NULL,
 		CreditCardCVV INT NOT NULL

@@ -26,7 +26,7 @@
         android:layout_marginTop="4dp"
         android:text="Walk Thru"
         android:textSize="36sp"
-        app:fontFamily="@font/pacifico,Regular"
+        app:fontFamily="@font/pacifico"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

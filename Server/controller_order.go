@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+
+	"github.com/golang/glog"
 )
 
 func GetOrders() []Order {
@@ -14,7 +15,8 @@ func GetOrders() []Order {
 	sqlStatement := `SELECT * FROM "Order";`
 	orders, err := db.Query(sqlStatement)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil
 	}
 	defer orders.Close()
 
@@ -22,7 +24,8 @@ func GetOrders() []Order {
 	for orders.Next() {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
-			log.Fatal(err)
+			glog.Error(err)
+			return nil
 		}
 		allOrders = append(allOrders, order)
 	}
@@ -37,6 +40,7 @@ func GetOrder(id int) (*Order, *Error) {
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
 	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 	return &order, nil
@@ -46,6 +50,7 @@ func CreateOrder(r *http.Request) (*Order, *Error) {
 	var order Order
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
 	db := ConnectToDatabase()
@@ -64,7 +69,7 @@ func CreateOrder(r *http.Request) (*Order, *Error) {
 		err = db.QueryRow(sqlStatement, order.Delivered, order.Price, order.Date, order.CustomerID, order.ShopID).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 	}
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
 	}
 
@@ -84,6 +89,7 @@ func UpdateOrder(id int, r *http.Request) (*Order, *Error) {
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
 	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Delivered, &temp.Price, &temp.Date, &temp.CustomerID, &temp.ShopID)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
@@ -93,6 +99,7 @@ func UpdateOrder(id int, r *http.Request) (*Order, *Error) {
 		WHERE id = $1;`
 	_, err = db.Exec(sqlStatement, id, order.Delivered, order.Price, order.Date, order.CustomerID, order.ShopID)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
 	order.ID = id
@@ -106,13 +113,14 @@ func DeleteOrder(id int) (*Order, *Error) {
 	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
 	err := db.QueryRow(sqlStatement, id).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
 	sqlStatement = `DELETE FROM "Order" WHERE ID = $1;`
 	_, err = db.Exec(sqlStatement, id)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
 		return nil, &Error{Status: 500, Error: "Error Deleting Data"}
 	}
 	return &order, nil
@@ -125,6 +133,7 @@ func ViewOrderItems(orderID int) ([]Item, *Error) {
 
 	_, orderReadError := GetOrder(orderID)
 	if orderReadError != nil {
+		glog.Error(orderReadError)
 		return nil, orderReadError
 	}
 
@@ -135,7 +144,8 @@ func ViewOrderItems(orderID int) ([]Item, *Error) {
 	`
 	items, err := db.Query(sqlStatement, orderID)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil, nil
 	}
 
 	defer items.Close()
@@ -144,7 +154,8 @@ func ViewOrderItems(orderID int) ([]Item, *Error) {
 	for items.Next() {
 		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
-			log.Fatal(err)
+			glog.Error(err)
+			return nil, nil
 		}
 		allItems = append(allItems, item)
 	}

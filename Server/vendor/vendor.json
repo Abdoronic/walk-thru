@@ -27,25 +27,25 @@
 			"revisionTime": "2019-10-11T15:32:32Z"
 		},
 		{
-			"checksumSHA1": "GWyBMV0VxrF4ZUUcUidsB442zRY=",
+			"checksumSHA1": "lmx8+gEdzLpiLtlWgiQjBd9kuis=",
 			"path": "github.com/stripe/stripe-go",
 			"revision": "6efec716e20234226b1525d3f7275aef669e43ae",
 			"revisionTime": "2019-12-04T23:56:53Z"
 		},
 		{
-			"checksumSHA1": "30pE9tZFPV4qmBPC3eo3WnJ1ncw=",
+			"checksumSHA1": "1yMv+ZhcSj84pHp6EF979mpAvHM=",
 			"path": "github.com/stripe/stripe-go/charge",
 			"revision": "6efec716e20234226b1525d3f7275aef669e43ae",
 			"revisionTime": "2019-12-04T23:56:53Z"
 		},
 		{
-			"checksumSHA1": "t1Q5ZZuRjpg64SUaUqgYeUNLp3k=",
+			"checksumSHA1": "QKErcwAFIio2vNuSO9C4xeWVev8=",
 			"path": "github.com/stripe/stripe-go/form",
 			"revision": "6efec716e20234226b1525d3f7275aef669e43ae",
 			"revisionTime": "2019-12-04T23:56:53Z"
 		},
 		{
-			"checksumSHA1": "0hDTbF5ky1NkODzq2w+odnvFJfc=",
+			"checksumSHA1": "B/Q7jlt78XCsCfYFTmf5RzVDkuo=",
 			"path": "github.com/stripe/stripe-go/token",
 			"revision": "6efec716e20234226b1525d3f7275aef669e43ae",
 			"revisionTime": "2019-12-04T23:56:53Z"

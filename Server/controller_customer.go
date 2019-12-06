@@ -408,3 +408,62 @@ func CustomerRemoveItem(orderID int, itemID int, r *http.Request) (*Order, *Erro
 	}
 	return updatedOrder, nil
 }
+
+// As a Customer i can view my Order Items.
+type OrderItem struct {
+	OrderID     int           `json:"orderID"`
+	ItemID      int           `json:"itemID"`
+	CustomerID  int           `json:"customerID"`
+	ShopID      sql.NullInt64 `json:"shopID"`
+	Quantity    int           `json:"quantity"`
+	Delivered   bool          `json:"delivered"`
+	OrderPrice  float64       `json:"OrderPrice"`
+	Date        string        `json:"date"`
+	Name        string        `json:"name"`
+	Type        string        `json:"type"`
+	Price       float64       `json:"price"`
+	Description string        `json:"description"`
+	ImageURL    string        `json:"imageURL"`
+	ItemShop    int           `json:"itemShop"`
+}
+
+func CustomerViewOrderItems(customerID int, orderID int, r *http.Request) ([]OrderItem, *Error) {
+	var orderItem OrderItem
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	getCustomerSQL := `SELECT * FROM Customer WHERE ID = $1;`
+	var customer Customer
+	customerErr := db.QueryRow(getCustomerSQL, customerID).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+
+	sqlStatement := `SELECT * FROM "Order" WHERE ID = $1;`
+	var order Order
+	orderErr := db.QueryRow(sqlStatement, orderID).Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+
+	if customerErr != nil || orderErr != nil {
+		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
+	}
+
+	viewOrderItemsSQL := `SELECT Contain.OrderID, Contain.ItemID, "Order".CustomerID, "Order".ShopID, Contain.Quantity, "Order".Delivered, "Order".Price AS OrderPrice, "Order".Date, Item.Name, Item.Type, Item.Price, Item.Description, Item.ImageURL, Item.ShopID AS ItemShop
+	FROM Contain, "Order", Item
+	WHERE "Order".ID = Contain.OrderID AND Item.ID = Contain.ItemID AND Contain.OrderID = $1 AND "Order".CustomerID = $2
+	`
+	noResult := db.QueryRow(viewOrderItemsSQL, orderID, customerID).Scan()
+	if noResult == sql.ErrNoRows {
+		return nil, &Error{Status: 400, Error: "This order is Empty or it does't belong to you"}
+	}
+	orderItems, viewOrderItemsErr := db.Query(viewOrderItemsSQL, orderID, customerID)
+	if viewOrderItemsErr != nil {
+		log.Fatal(viewOrderItemsErr)
+	}
+	defer orderItems.Close()
+	var allOrderItems []OrderItem
+	for orderItems.Next() {
+		err := orderItems.Scan(&orderItem.OrderID, &orderItem.ItemID, &orderItem.CustomerID, &orderItem.ShopID, &orderItem.Quantity, &orderItem.Delivered, &orderItem.OrderPrice, &orderItem.Date, &orderItem.Name, &orderItem.Type, &orderItem.Price, &orderItem.Description, &orderItem.ImageURL, &orderItem.ItemShop)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrderItems = append(allOrderItems, orderItem)
+	}
+	return allOrderItems, nil
+}

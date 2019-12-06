@@ -24,6 +24,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/customers/{id}/removeItem/{orderID}/{itemID}", CustomerRemoveItemHandler).Methods("PUT")
 	router.HandleFunc("/customers/{customerID}/checkout/{orderID}/{shopID}", CheckoutHandler).Methods("POST")
 	router.HandleFunc("/customers/{id}/viewOrderItems/{orderID}", CustomerViewOrderItemsHandler).Methods("GET")
+	router.HandleFunc("/customers/login", CustomerLoginHandler).Methods("POST")
 
 	router.HandleFunc("/items", GetItemsHandler).Methods("GET")
 	router.HandleFunc("/items/{id}", GetItemHandler).Methods("GET")
@@ -44,6 +45,7 @@ func CreateRouter() *mux.Router {
 
 	router.HandleFunc("/shops/{id}/shopAddItem", ShopAddItemHandler).Methods("POST")
 	router.HandleFunc("/shops/{id}/shopDeleteItem/{itemID}", ShopDeleteItemHandler).Methods("DELETE")
+	router.HandleFunc("/shops/login", ShopLoginHandler).Methods("POST")
 
 	router.HandleFunc("/orders", GetOrdersHandler).Methods("GET")
 	router.HandleFunc("/orders/{id}", GetOrderHandler).Methods("GET")

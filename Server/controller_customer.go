@@ -467,3 +467,31 @@ func CustomerViewOrderItems(customerID int, orderID int, r *http.Request) ([]Ord
 	}
 	return allOrderItems, nil
 }
+
+// As a Customer i should be able to login
+func CustomerLogin(r *http.Request) (*Customer, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	type input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	var body input
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var customer Customer
+	getCustomerSQL := `SELECT *
+	FROM Customer
+	WHERE Email = $1`
+	getCustomerErr := db.QueryRow(getCustomerSQL, body.Email).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
+	if getCustomerErr == sql.ErrNoRows {
+		return nil, &Error{Status: 404, Error: "Email doesn't exist"}
+	}
+	if body.Password != customer.Password {
+		return nil, &Error{Status: 400, Error: "Incorrect Password"}
+	}
+	return &customer, nil
+}

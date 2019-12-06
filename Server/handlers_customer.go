@@ -196,3 +196,12 @@ func CustomerViewOrderItemsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(orderItems)
 }
+func CustomerLoginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var customer, getError = CustomerLogin(r)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(customer)
+}

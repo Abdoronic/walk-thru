@@ -179,3 +179,20 @@ func CustomerRemoveItemHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(updatedOrder)
 }
+
+func CustomerViewOrderItemsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	customerID, customerErr := strconv.Atoi(params["id"])
+	orderID, orderErr := strconv.Atoi(params["orderID"])
+	if orderErr != nil || customerErr != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var orderItems, getError = CustomerViewOrderItems(customerID, orderID, r)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(orderItems)
+}

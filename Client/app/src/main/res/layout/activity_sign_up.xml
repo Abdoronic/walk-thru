@@ -8,7 +8,7 @@
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/signInBtn"
+        android:id="@+id/customerSignUpButton"
         style="?android:attr/borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -65,7 +65,7 @@
         app:layout_constraintTop_toBottomOf="@+id/firstNameText" />
 
     <EditText
-        android:id="@+id/passwrodText"
+        android:id="@+id/passwordText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -95,7 +95,7 @@
         android:inputType="number"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwrodText" />
+        app:layout_constraintTop_toBottomOf="@+id/passwordText" />
 
     <EditText
         android:id="@+id/cvvText"

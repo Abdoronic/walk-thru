@@ -97,3 +97,37 @@ func CustomerCreateOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(createdOrder)
 }
+
+func CustomerAddItemHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	orderID, orderErr := strconv.Atoi(params["orderID"])
+	itemID, itemErr := strconv.Atoi(params["itemID"])
+	if orderErr != nil || itemErr != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var updatedOrder, updateError = CustomerAddItem(orderID, itemID, r)
+	if updateError != nil {
+		ErrorHandler(updateError.Error, updateError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(updatedOrder)
+}
+
+func CustomerRemoveItemHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	orderID, orderErr := strconv.Atoi(params["orderID"])
+	itemID, itemErr := strconv.Atoi(params["itemID"])
+	if orderErr != nil || itemErr != nil {
+		ErrorHandler("Invalid ID", 400, w, r)
+		return
+	}
+	var updatedOrder, updateError = CustomerRemoveItem(orderID, itemID, r)
+	if updateError != nil {
+		ErrorHandler(updateError.Error, updateError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(updatedOrder)
+}

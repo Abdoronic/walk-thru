@@ -16,7 +16,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Button signUp = (Button) findViewById(R.id.signUpBtn);
-        signInButton = findViewById(R.id.signInBtn);
+        signInButton = findViewById(R.id.customerSignUpButton);
         emailTextView = findViewById(R.id.emailText);
         passwordTextView = findViewById((R.id.passwordText));
 

@@ -31,7 +31,7 @@ public class AdminActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin);
-        signInButton = findViewById(R.id.signInBtn);
+        signInButton = findViewById(R.id.customerSignUpButton);
         usernameTextView = findViewById(R.id.emailText);
         passwordTextView = findViewById(R.id.passwordText);
 

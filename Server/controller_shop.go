@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
+
+	"github.com/golang/glog"
 )
 
 func GetShops() []Shop {
@@ -17,7 +18,8 @@ func GetShops() []Shop {
 	sqlStatement := `SELECT * FROM Shop;`
 	shops, err := db.Query(sqlStatement)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil
 	}
 	defer shops.Close()
 
@@ -25,7 +27,8 @@ func GetShops() []Shop {
 	for shops.Next() {
 		err = shops.Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
 		if err != nil {
-			log.Fatal(err)
+			glog.Error(err)
+			return nil
 		}
 		allShops = append(allShops, shop)
 	}
@@ -40,6 +43,7 @@ func GetShop(id int) (*Shop, *Error) {
 	sqlStatement := `SELECT * FROM Shop WHERE ID = $1;`
 	err := db.QueryRow(sqlStatement, id).Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 	return &shop, nil
@@ -49,6 +53,7 @@ func CreateShop(r *http.Request) (*Shop, *Error) {
 	var shop Shop
 	err := json.NewDecoder(r.Body).Decode(&shop)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
 	db := ConnectToDatabase()
@@ -59,7 +64,7 @@ func CreateShop(r *http.Request) (*Shop, *Error) {
 	VALUES ($1, $2, $3, $4) RETURNING ID, Name, Location, AdminUsername, AdminPassword`
 	err = db.QueryRow(sqlStatement, shop.Name, shop.Location, shop.AdminUsername, shop.AdminPassword).Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
 		return nil, &Error{Status: 500, Error: "Error Creating Data"}
 	}
 
@@ -79,6 +84,7 @@ func UpdateShop(id int, r *http.Request) (*Shop, *Error) {
 	sqlStatement := `SELECT * FROM Shop WHERE ID = $1;`
 	err = db.QueryRow(sqlStatement, id).Scan(&temp.ID, &temp.Name, &temp.Location, &temp.AdminUsername, &temp.AdminPassword)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
@@ -88,6 +94,7 @@ func UpdateShop(id int, r *http.Request) (*Shop, *Error) {
 		WHERE id = $1;`
 	_, err = db.Exec(sqlStatement, id, shop.Name, shop.Location, shop.AdminUsername, shop.AdminPassword)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 400, Error: "Invalid Data"}
 	}
 
@@ -103,13 +110,14 @@ func DeleteShop(id int) (*Shop, *Error) {
 	sqlStatement := `SELECT * FROM Shop WHERE ID = $1;`
 	err := db.QueryRow(sqlStatement, id).Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
 	if err != nil {
+		glog.Error(err)
 		return nil, &Error{Status: 404, Error: "This ID doesn't exist"}
 	}
 
 	sqlStatement = `DELETE FROM Shop WHERE ID = $1;`
 	_, err = db.Exec(sqlStatement, id)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
 		return nil, &Error{Status: 500, Error: "Error Deleting Data"}
 	}
 	return &shop, nil
@@ -123,19 +131,22 @@ func ShopAddItem(id int, r *http.Request) (*Item, *Error) {
 	var item Item
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil, nil
 	}
 
 	item.ShopID = id
 	modifiedBody, err := json.Marshal(item)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil, nil
 	}
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
 	r.ContentLength = int64(len(modifiedBody))
 
 	addedItem, addError := CreateItem(r)
 	if addError != nil {
+		glog.Error(addError)
 		return nil, addError
 	}
 	return addedItem, nil
@@ -148,6 +159,7 @@ func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
 
 	item, getError := GetItem(itemID)
 	if getError != nil {
+		glog.Error(getError)
 		return nil, getError
 	}
 	if item.ShopID != id {
@@ -155,6 +167,7 @@ func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
 	}
 	deletedItem, deleteError := DeleteItem(itemID)
 	if deleteError != nil {
+		glog.Error(deleteError)
 		return nil, deleteError
 	}
 	return deletedItem, nil
@@ -168,7 +181,8 @@ func ViewPendingOrders(id int) []Order {
 	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = false;`
 	orders, err := db.Query(sqlStatement, id)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil
 	}
 	defer orders.Close()
 
@@ -176,7 +190,8 @@ func ViewPendingOrders(id int) []Order {
 	for orders.Next() {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
-			log.Fatal(err)
+			glog.Error(err)
+			return nil
 		}
 		allOrders = append(allOrders, order)
 	}
@@ -191,7 +206,8 @@ func ViewDeliveredOrders(id int) []Order {
 	sqlStatement := `SELECT * FROM "Order" WHERE ShopID = $1 AND Delivered = true;`
 	orders, err := db.Query(sqlStatement, id)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil
 	}
 	defer orders.Close()
 
@@ -199,7 +215,8 @@ func ViewDeliveredOrders(id int) []Order {
 	for orders.Next() {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
-			log.Fatal(err)
+			glog.Error(err)
+			return nil
 		}
 		allOrders = append(allOrders, order)
 	}
@@ -217,6 +234,7 @@ func DeliverOrder(orderID int, shopID int) *Error {
 		WHERE ID = $1 AND ShopID = $2;`
 	_, err := db.Exec(sqlStatement, orderID, shopID)
 	if err != nil {
+		glog.Error(err)
 		return &Error{Status: 400, Error: "Invalid Data"}
 	}
 	order.ID = orderID
@@ -235,7 +253,8 @@ func ShopLogin(r *http.Request) (*Shop, *Error) {
 	var body input
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
+		return nil, nil
 	}
 	var shop Shop
 	getShopSQL := `SELECT *

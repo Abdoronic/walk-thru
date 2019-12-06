@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "Y27Agdpf4FN4HGANJ8cp8+Q6VO4=",
+			"path": "github.com/golang/glog",
+			"revision": "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
+			"revisionTime": "2016-01-25T20:49:56Z"
+		},
+		{
 			"checksumSHA1": "wx9WjRvy7Mon1VGbdyyvKBvPryk=",
 			"path": "github.com/gorilla/mux",
 			"revision": "49c01487a141b49f8ffe06277f3dca3ee80a55fa",

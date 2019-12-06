@@ -60,21 +60,34 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
 
-
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("email", emailTextView.getText().toString());
                 params.put("password", passwordTextView.getText().toString());
 
                 String url = "http://10.0.2.2:8000/customers/login";
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, new JSONObject(params), new Response.Listener<JSONObject>() {
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params), new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                      // go to customer view shop intent
+                        Intent i = new Intent(getApplicationContext(),CustomerViewShops.class);
+                        try {
+                            i.putExtra("firstName",response.getString("firstName"));
+                            i.putExtra("id",response.getInt("id"));
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        startActivity(i);
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(),error.getMessage(),Toast.LENGTH_LONG).show();
+                        try {
+                            JSONObject errData =new JSONObject(new String(error.networkResponse.data));
+                            Toast.makeText(getApplicationContext(),errData.getString("error"),Toast.LENGTH_LONG).show();
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         error.printStackTrace();
                     }
                 });

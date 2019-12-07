@@ -12,8 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".ShopViewItems"></activity>
-        <activity android:name=".CustomerViewShops" />
+        <activity android:name=".ShopViewOrdersActivity"></activity>
+        <activity android:name=".CustomerViewItemsActivity" />
+        <activity android:name=".CustomerViewOrdersActivity" />
+        <activity android:name=".ShopViewItemsActivity" />
+        <activity android:name=".CustomerViewShopsActivity" />
         <activity android:name=".SignUpActivity" />
         <activity android:name=".AdminActivity" />
         <activity android:name=".MainActivity">

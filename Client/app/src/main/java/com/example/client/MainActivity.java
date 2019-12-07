@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params), new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Intent i = new Intent(getApplicationContext(),CustomerViewShops.class);
+                        Intent i = new Intent(getApplicationContext(), CustomerViewShopsActivity.class);
                         try {
                             i.putExtra("firstName",response.getString("firstName"));
                             i.putExtra("id",response.getInt("id"));

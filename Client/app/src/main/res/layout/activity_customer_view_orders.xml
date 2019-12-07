@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ShopViewItemsActivity">
+    tools:context=".CustomerViewOrdersActivity">
 
     <TextView
         android:id="@+id/textView2"
@@ -19,19 +19,19 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:background="@drawable/orangebutton"
-        android:id="@+id/itemsButton"
+        android:background="@drawable/greybutton"
+        android:id="@+id/shopsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="84dp"
         android:layout_marginLeft="84dp"
         android:layout_marginTop="36dp"
-        android:text="Items"
+        android:text="Shops"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <Button
-        android:background="@drawable/greybutton"
+        android:background="@drawable/orangebutton"
         android:id="@+id/ordersButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

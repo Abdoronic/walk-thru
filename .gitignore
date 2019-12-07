@@ -1,6 +1,11 @@
 #Server
 config.json
-Server
+Server/Server
+Server/Server.exe
+Server/vendor/github.com
+
+#MacOS
+.DS_Store
 
 # Built application files
 *.apk

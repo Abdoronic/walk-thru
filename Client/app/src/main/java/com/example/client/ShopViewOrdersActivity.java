@@ -22,6 +22,7 @@ public class ShopViewOrdersActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(ShopViewOrdersActivity.this, ShopViewItemsActivity.class);
+                i.putExtra("id",getIntent().getIntExtra("id",-1));
                 startActivity(i);
             }
         });

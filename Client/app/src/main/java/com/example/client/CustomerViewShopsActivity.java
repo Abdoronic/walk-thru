@@ -1,14 +1,19 @@
 package com.example.client;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -35,104 +40,122 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
     private JSONObject[] shopDataJSON;
     private ArrayAdapter<String> myAdapter;
     private ListView shopsListView;
+
+    public void setTitle(String title){
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        TextView textView = new TextView(this);
+        textView.setText(title);
+        textView.setTextSize(30);
+        textView.setTypeface(getResources().getFont(R.font.pacifico), Typeface.NORMAL);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextColor(getResources().getColor(R.color.textColorPrimary));
+        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+        getSupportActionBar().setCustomView(textView);
+        getSupportActionBar().show();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customer_view_shops);
 
-        ordersButton = findViewById(R.id.ordersButton);
-        shopsListView = findViewById(R.id.shopsListView);
+        setTitle("Walk Thru");
 
-        ordersButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(CustomerViewShopsActivity.this, CustomerViewOrdersActivity.class);
-                i.putExtra("activity","shops");
-                i.putExtra("id",getIntent().getIntExtra("id",-1));
-                startActivity(i);
-            }
-        });
-
-
-        RequestQueue queue = Volley.newRequestQueue(CustomerViewShopsActivity.this);
-
-        String url = "http://10.0.2.2:8000/shops";
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
-            @Override
-            public void onResponse(JSONArray response) {
-                try {
-                    shopData = new String[response.length()];
-                    shopDataJSON = new JSONObject[response.length()];
-                    for(int i=0;i<response.length();i++){
-                        JSONObject shopJSON = response.getJSONObject(i);
-                        String shop = "Shop Name: "+shopJSON.getString("name")+"\n"+"Shop Location: "+shopJSON.getString("location");
-                        shopData[i]=shop;
-                        shopDataJSON[i]=shopJSON;
-                    }
-                    myAdapter = new ArrayAdapter<String>(CustomerViewShopsActivity.this, android.R.layout.simple_list_item_1, android.R.id.text1, shopData);
-                    shopsListView.setAdapter(myAdapter);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                try {
-                    JSONObject errData =new JSONObject(new String(error.networkResponse.data));
-                    Toast.makeText(getApplicationContext(),errData.getString("error"),Toast.LENGTH_LONG).show();
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                error.printStackTrace();
-            }
-        });
-        queue.add(jsonArrayRequest);
-
-
-
-        shopsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-                RequestQueue queue = Volley.newRequestQueue(CustomerViewShopsActivity.this);
-                JSONObject jsonBody = new JSONObject();
-                try {
-                    jsonBody.put("delivered",false);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                String url = "http://10.0.2.2:8000/customers/"+getIntent().getIntExtra("id",-1)+"/createOrder";
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            int shopID = shopDataJSON[position].getInt("id");
-                            Intent i = new Intent(getApplicationContext(),CustomerViewItemsActivity.class);
-                            i.putExtra("customerID", getIntent().getIntExtra("id",-1));
-                            i.putExtra("shopID",shopID);
-                            i.putExtra("orderID",response.getInt("id"));
-                            startActivity(i);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        try {
-                            JSONObject errData = new JSONObject(new String(error.networkResponse.data));
-                            Toast.makeText(getApplicationContext(), errData.getString("error"), Toast.LENGTH_LONG).show();
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        error.printStackTrace();
-                    }
-                });
-                queue.add(jsonObjectRequest);
-            }
-        });
+//        ordersButton = findViewById(R.id.ordersButton);
+//        shopsListView = findViewById(R.id.shopsListView);
+//
+//        ordersButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent i = new Intent(CustomerViewShopsActivity.this, CustomerViewOrdersActivity.class);
+//                i.putExtra("activity","shops");
+//                i.putExtra("id",getIntent().getIntExtra("id",-1));
+//                startActivity(i);
+//            }
+//        });
+//
+//
+//        RequestQueue queue = Volley.newRequestQueue(CustomerViewShopsActivity.this);
+//
+//        String url = "http://10.0.2.2:8000/shops";
+//        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+//            @Override
+//            public void onResponse(JSONArray response) {
+//                try {
+//                    shopData = new String[response.length()];
+//                    shopDataJSON = new JSONObject[response.length()];
+//                    for(int i=0;i<response.length();i++){
+//                        JSONObject shopJSON = response.getJSONObject(i);
+//                        String shop = "Shop Name: "+shopJSON.getString("name")+"\n"+"Shop Location: "+shopJSON.getString("location");
+//                        shopData[i]=shop;
+//                        shopDataJSON[i]=shopJSON;
+//                    }
+//                    myAdapter = new ArrayAdapter<String>(CustomerViewShopsActivity.this, android.R.layout.simple_list_item_1, android.R.id.text1, shopData);
+//                    shopsListView.setAdapter(myAdapter);
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                try {
+//                    JSONObject errData =new JSONObject(new String(error.networkResponse.data));
+//                    Toast.makeText(getApplicationContext(),errData.getString("error"),Toast.LENGTH_LONG).show();
+//
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//                error.printStackTrace();
+//            }
+//        });
+//        queue.add(jsonArrayRequest);
+//
+//
+//
+//        shopsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//
+//            @Override
+//            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+//                RequestQueue queue = Volley.newRequestQueue(CustomerViewShopsActivity.this);
+//                JSONObject jsonBody = new JSONObject();
+//                try {
+//                    jsonBody.put("delivered",false);
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//                String url = "http://10.0.2.2:8000/customers/"+getIntent().getIntExtra("id",-1)+"/createOrder";
+//                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
+//                    @Override
+//                    public void onResponse(JSONObject response) {
+//                        try {
+//                            int shopID = shopDataJSON[position].getInt("id");
+//                            Intent i = new Intent(getApplicationContext(),CustomerViewItemsActivity.class);
+//                            i.putExtra("customerID", getIntent().getIntExtra("id",-1));
+//                            i.putExtra("shopID",shopID);
+//                            i.putExtra("orderID",response.getInt("id"));
+//                            startActivity(i);
+//                        } catch (JSONException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }, new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        try {
+//                            JSONObject errData = new JSONObject(new String(error.networkResponse.data));
+//                            Toast.makeText(getApplicationContext(), errData.getString("error"), Toast.LENGTH_LONG).show();
+//
+//                        } catch (JSONException e) {
+//                            e.printStackTrace();
+//                        }
+//                        error.printStackTrace();
+//                    }
+//                });
+//                queue.add(jsonObjectRequest);
+//            }
+//        });
     }
 }

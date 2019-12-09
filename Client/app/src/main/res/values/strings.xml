@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Client</string>
+    <string name="app_name">Walk Thru</string>
+    <string name="BASE_URL">http://10.0.2.2:8000</string>
 </resources>

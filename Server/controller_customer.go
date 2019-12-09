@@ -127,6 +127,31 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 	return &customer, nil
 }
 
+func ViewCustomerOrders(id int) []Order {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE CustomerID = $1;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		glog.Error(err)
+		return nil
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			glog.Error(err)
+			return nil
+		}
+		allOrders = append(allOrders, order)
+	}
+	return allOrders
+}
+
 func ViewItems(id int) []Item {
 	var item Item
 	db := ConnectToDatabase()

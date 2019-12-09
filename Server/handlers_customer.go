@@ -162,11 +162,12 @@ func CustomerAddItemHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	orderID, orderErr := strconv.Atoi(params["orderID"])
 	itemID, itemErr := strconv.Atoi(params["itemID"])
-	if orderErr != nil || itemErr != nil {
+	quantity, quantityErr := strconv.Atoi(params["quantity"])
+	if orderErr != nil || itemErr != nil || quantityErr != nil {
 		ErrorHandler("Invalid ID", 400, w, r)
 		return
 	}
-	var updatedOrder, updateError = CustomerAddItem(orderID, itemID, r)
+	var updatedOrder, updateError = CustomerAddItem(orderID, itemID, quantity, r)
 	if updateError != nil {
 		ErrorHandler(updateError.Error, updateError.Status, w, r)
 		return

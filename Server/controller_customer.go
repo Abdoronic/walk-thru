@@ -341,8 +341,70 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 	return order, nil
 }
 
+func CustomerAddItem(orderID int, itemID int, quantity int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	switch errQuery {
+	case sql.ErrNoRows:
+		{
+			// Insert into contain relation
+			createContainSQL := `INSERT INTO Contain (OrderID, ItemID, Quantity)
+				VALUES ($1, $2, $3)`
+			_, errContain := db.Exec(createContainSQL, orderID, itemID, quantity)
+			if errContain != nil {
+				glog.Error(errContain)
+				return nil, nil
+			}
+		}
+	case nil:
+		{
+			// update contain relation
+			updateContainSQL := `UPDATE Contain
+			SET Quantity = $3
+			WHERE ItemID = $1 AND OrderID = $2;`
+			_, errContain := db.Exec(updateContainSQL, itemID, orderID, quantity)
+			if errContain != nil {
+				glog.Error(errContain)
+				return nil, nil
+			}
+		}
+	default:
+		glog.Error(errQuery)
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		glog.Error(errItem)
+		return nil, errItem
+	}
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		glog.Error(errOrder)
+		return nil, errOrder
+	}
+	order.Price = order.Price + (item.Price * float64(quantity)) - (float64(currentQuantity) * item.Price)
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		glog.Error(err)
+		return nil, nil
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		glog.Error(errOrderUpdate)
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
+}
+
 // As a Customer i can add items to my Order.
-func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+func CustomerAddItemIncremental(orderID int, itemID int, r *http.Request) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 
@@ -405,7 +467,56 @@ func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) 
 }
 
 // As a Customer i can remove items from my Order.
+// As a Customer i can remove items from my Order.
 func CustomerRemoveItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	if errQuery != nil {
+		glog.Error(errQuery)
+		return nil, nil
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		glog.Error(errItem)
+		return nil, errItem
+	}
+	// delete from contain relation
+	deleteContainSQL := `DELETE FROM Contain
+		WHERE ItemID = $1 AND OrderID = $2;`
+	_, errContain := db.Exec(deleteContainSQL, itemID, orderID)
+	if errContain != nil {
+		glog.Error(errContain)
+		return nil, &Error{Status: 500, Error: "Couldn't delete"}
+	}
+
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		glog.Error(errOrder)
+		return nil, errOrder
+	}
+	order.Price = order.Price - (item.Price * float64(currentQuantity))
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		glog.Error(err)
+		return nil, nil
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		glog.Error(errOrderUpdate)
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
+}
+
+func CustomerRemoveItemIncremental(orderID int, itemID int, r *http.Request) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 

@@ -10,7 +10,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func GetShops() []Shop {
+func GetShops() ([]Shop, *Error) {
 	var shop Shop
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -19,7 +19,7 @@ func GetShops() []Shop {
 	shops, err := db.Query(sqlStatement)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer shops.Close()
 
@@ -28,11 +28,14 @@ func GetShops() []Shop {
 		err = shops.Scan(&shop.ID, &shop.Name, &shop.Location, &shop.AdminUsername, &shop.AdminPassword)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allShops = append(allShops, shop)
 	}
-	return allShops
+	if allShops == nil {
+		return nil, &Error{Status: 404, Error: "No Shops exist"}
+	}
+	return allShops, nil
 }
 
 func GetShop(id int) (*Shop, *Error) {
@@ -173,7 +176,7 @@ func ShopDeleteItem(id int, itemID int, r *http.Request) (*Item, *Error) {
 	return deletedItem, nil
 }
 
-func ViewPendingOrders(id int) []Order {
+func ViewPendingOrders(id int) ([]Order, *Error) {
 	var order Order
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -182,7 +185,7 @@ func ViewPendingOrders(id int) []Order {
 	orders, err := db.Query(sqlStatement, id)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer orders.Close()
 
@@ -191,14 +194,17 @@ func ViewPendingOrders(id int) []Order {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allOrders = append(allOrders, order)
 	}
-	return allOrders
+	if allOrders == nil {
+		return nil, &Error{Status: 404, Error: "No Pending Orders Exist"}
+	}
+	return allOrders, nil
 }
 
-func ViewDeliveredOrders(id int) []Order {
+func ViewDeliveredOrders(id int) ([]Order, *Error) {
 	var order Order
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -207,7 +213,7 @@ func ViewDeliveredOrders(id int) []Order {
 	orders, err := db.Query(sqlStatement, id)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer orders.Close()
 
@@ -216,11 +222,14 @@ func ViewDeliveredOrders(id int) []Order {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allOrders = append(allOrders, order)
 	}
-	return allOrders
+	if allOrders == nil {
+		return nil, &Error{Status: 404, Error: "No Delivered Orders exist"}
+	}
+	return allOrders, nil
 }
 
 func DeliverOrder(orderID int, shopID int) *Error {
@@ -239,7 +248,6 @@ func DeliverOrder(orderID int, shopID int) *Error {
 	}
 	order.ID = orderID
 	return nil
-
 }
 
 func ShopLogin(r *http.Request) (*Shop, *Error) {

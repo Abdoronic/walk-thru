@@ -15,7 +15,7 @@ import (
 	"github.com/stripe/stripe-go/token"
 )
 
-func GetCustomers() []Customer {
+func GetCustomers() ([]Customer, *Error) {
 	var customer Customer
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -24,7 +24,7 @@ func GetCustomers() []Customer {
 	customers, err := db.Query(sqlStatement)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer customers.Close()
 
@@ -33,11 +33,14 @@ func GetCustomers() []Customer {
 		err = customers.Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allCustomers = append(allCustomers, customer)
 	}
-	return allCustomers
+	if allCustomers == nil {
+		return nil, &Error{Status: 404, Error: "No Customers Exist"}
+	}
+	return allCustomers, nil
 }
 
 func GetCustomer(id int) (*Customer, *Error) {
@@ -70,7 +73,7 @@ func CreateCustomer(r *http.Request) (*Customer, *Error) {
 	err = db.QueryRow(sqlStatement, customer.Email, customer.FirstName, customer.LastName, customer.Password, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 	if err != nil {
 		glog.Error(err)
-		return nil, &Error{Status: 500, Error: "Email already exists"}
+		return nil, &Error{Status: 500, Error: err.Error()}
 	}
 	return &customer, nil
 }
@@ -127,7 +130,7 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 	return &customer, nil
 }
 
-func ViewCustomerOrders(id int) []Order {
+func ViewCustomerOrders(id int) ([]Order, *Error) {
 	var order Order
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -136,7 +139,7 @@ func ViewCustomerOrders(id int) []Order {
 	orders, err := db.Query(sqlStatement, id)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer orders.Close()
 
@@ -145,14 +148,17 @@ func ViewCustomerOrders(id int) []Order {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allOrders = append(allOrders, order)
 	}
-	return allOrders
+	if allOrders == nil {
+		return nil, &Error{Status: 404, Error: "No Orders Exist"}
+	}
+	return allOrders, nil
 }
 
-func ViewItems(id int) []Item {
+func ViewItems(id int) ([]Item, *Error) {
 	var item Item
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -161,7 +167,7 @@ func ViewItems(id int) []Item {
 	items, err := db.Query(sqlStatement, id)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer items.Close()
 
@@ -170,11 +176,14 @@ func ViewItems(id int) []Item {
 		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allItems = append(allItems, item)
 	}
-	return allItems
+	if allItems == nil {
+		return nil, &Error{Status: 404, Error: "No Items Exist"}
+	}
+	return allItems, nil
 }
 
 // As a Customer i can create an Order.
@@ -296,7 +305,7 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 	//Start Payment
 	cardParams := &stripe.TokenParams{
 		Card: &stripe.CardParams{
-			Number:   stripe.String(strconv.Itoa(customer.CreditCardNumber)),
+			Number:   stripe.String(customer.CreditCardNumber),
 			ExpMonth: stripe.String(customer.CreditCardExpiryDate[5:7]),
 			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:4]),
 			CVC:      stripe.String(strconv.Itoa(customer.CreditCardCVV))},

@@ -42,6 +42,10 @@ public class ShopViewItemsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent i = new Intent(ShopViewItemsActivity.this, ShopViewOrdersActivity.class);
                 i.putExtra("id",getIntent().getIntExtra("id",-1));
+                i.putExtra("name",getIntent().getStringExtra("name"));
+                i.putExtra("location",getIntent().getStringExtra("location"));
+                i.putExtra("adminUsername",getIntent().getStringExtra("adminUsername"));
+                i.putExtra("adminPassword",getIntent().getStringExtra("adminPassword"));
                 startActivity(i);
             }
         });

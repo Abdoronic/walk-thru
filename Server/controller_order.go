@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func GetOrders() []Order {
+func GetOrders() ([]Order, *Error) {
 	var order Order
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -16,7 +16,7 @@ func GetOrders() []Order {
 	orders, err := db.Query(sqlStatement)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer orders.Close()
 
@@ -25,11 +25,14 @@ func GetOrders() []Order {
 		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allOrders = append(allOrders, order)
 	}
-	return allOrders
+	if allOrders == nil {
+		return nil, &Error{Status: 404, Error: "No Orders Exist"}
+	}
+	return allOrders, nil
 }
 
 func GetOrder(id int) (*Order, *Error) {

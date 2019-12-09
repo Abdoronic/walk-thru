@@ -10,7 +10,12 @@ import (
 
 func GetOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetOrders())
+	orders, readError := GetOrders()
+	if readError != nil {
+		ErrorHandler(readError.Error, readError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(orders)
 }
 
 func GetOrderHandler(w http.ResponseWriter, r *http.Request) {

@@ -11,7 +11,12 @@ import (
 
 func GetCustomersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetCustomers())
+	customers, readError := GetCustomers()
+	if readError != nil {
+		ErrorHandler(readError.Error, readError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(customers)
 }
 
 func GetCustomerHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +85,12 @@ func ViewOrdersHandler(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("Invalid ID", 400, w, r)
 		return
 	}
-	json.NewEncoder(w).Encode(ViewCustomerOrders(id))
+	var orders, getError = ViewCustomerOrders(id)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(orders)
 }
 
 func ViewItemsHandler(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +101,12 @@ func ViewItemsHandler(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("Invalid ID", 400, w, r)
 		return
 	}
-	json.NewEncoder(w).Encode(ViewItems(id))
+	var items, getError = ViewItems(id)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(items)
 }
 
 func CustomerCreateOrderHandler(w http.ResponseWriter, r *http.Request) {

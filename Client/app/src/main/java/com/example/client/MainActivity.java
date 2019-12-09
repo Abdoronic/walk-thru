@@ -64,15 +64,21 @@ public class MainActivity extends AppCompatActivity {
                         MainActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Intent intent = new Intent(getApplicationContext(), CustomerViewShopsActivity.class);
+                                Intent i = new Intent(getApplicationContext(), CustomerViewShopsActivity.class);
                                 try {
-                                    intent.putExtra("firstName",data.getString("firstName"));
-                                    intent.putExtra("id", data.getInt("id"));
+                                    i.putExtra("id", data.getInt("id"));
+                                    i.putExtra("firstName", data.getString("firstName"));
+                                    i.putExtra("lastName", data.getString("lastName"));
+                                    i.putExtra("email", data.getString("email"));
+                                    i.putExtra("password", data.getString("password"));
+                                    i.putExtra("creditCardNumber", data.getString("creditCardNumber"));
+                                    i.putExtra("creditCardExpiryDate", data.getString("creditCardExpiryDate"));
+                                    i.putExtra("creditCardCVV", data.getInt("creditCardCVV"));
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
-                                startActivity(intent);
+                                startActivity(i);
                             }
                         });
                     } catch(Exception e) {
@@ -120,10 +126,10 @@ public class MainActivity extends AppCompatActivity {
 
         getSupportActionBar().hide();
 
-        Button signUp = findViewById(R.id.signUpBtn);
+        Button signUp = findViewById(R.id.signUpButton);
         signInButton = findViewById(R.id.customerSignUpButton);
-        emailTextView = findViewById(R.id.emailText);
-        passwordTextView = findViewById((R.id.passwordText));
+        emailTextView = findViewById(R.id.emailTextView);
+        passwordTextView = findViewById((R.id.passwordTextView));
 
         signUp.setOnClickListener(new View.OnClickListener() {
             @Override

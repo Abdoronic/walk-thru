@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func GetItems() []Item {
+func GetItems() ([]Item, *Error) {
 	var item Item
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -16,7 +16,7 @@ func GetItems() []Item {
 	items, err := db.Query(sqlStatement)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer items.Close()
 
@@ -25,11 +25,14 @@ func GetItems() []Item {
 		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allItems = append(allItems, item)
 	}
-	return allItems
+	if allItems == nil {
+		return nil, &Error{Status: 404, Error: "No Items exists"}
+	}
+	return allItems, nil
 }
 
 func GetItem(id int) (*Item, *Error) {

@@ -37,6 +37,7 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
 
     private String[] data;
     private JSONObject[] dataJSON;
+    private JSONObject[] shopsJSON;
     private ArrayAdapter<String> shopsListAdapter, ordersListAdapter;
     private ListView listView;
     private boolean shopsLoaded = false, ordersLoaded = false, ordersDisplayed = false;
@@ -62,13 +63,13 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
                     try {
                         JSONArray res = new JSONArray(response.body().string());
                         data = new String[res.length()];
-                        dataJSON = new JSONObject[res.length()];
+                        shopsJSON = new JSONObject[res.length()];
                         for (int i = 0; i < res.length(); i++) {
                             JSONObject shopJSON = res.getJSONObject(i);
                             String shop = "Shop Name: " + shopJSON.getString("name") + "\n"
                                     + "Shop Location: " + shopJSON.getString("location");
                             data[i] = shop;
-                            dataJSON[i] = shopJSON;
+                            shopsJSON[i] = shopJSON;
                         }
                         shopsListAdapter = new ArrayAdapter<String>(CustomerViewShopsActivity.this, android.R.layout.simple_list_item_1, android.R.id.text1, data);
                         shopsLoaded = true;
@@ -90,6 +91,7 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
                                 }
                             }
                         });
+                        shopsLoaded = true;
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -149,6 +151,7 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
                                 }
                             }
                         });
+                        ordersLoaded = true;
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -194,11 +197,21 @@ public class CustomerViewShopsActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    int shopID = dataJSON[position].getInt("id");
+                                    int shopID = shopsJSON[position].getInt("id");
                                     Intent i = new Intent(getApplicationContext(), CustomerViewItemsActivity.class);
-                                    i.putExtra("customerID", getIntent().getIntExtra("id", -1));
+
+                                    i.putExtra("id", getIntent().getIntExtra("id",-1));
+                                    i.putExtra("firstName", getIntent().getStringExtra("firstName"));
+                                    i.putExtra("lastName", getIntent().getStringExtra("lastName"));
+                                    i.putExtra("email", getIntent().getStringExtra("email"));
+                                    i.putExtra("password", getIntent().getStringExtra("password"));
+                                    i.putExtra("creditCardNumber", getIntent().getStringExtra("creditCardNumber"));
+                                    i.putExtra("creditCardExpiryDate", getIntent().getStringExtra("creditCardExpiryDate"));
+                                    i.putExtra("creditCardCVV", getIntent().getIntExtra("creditCardCVV",-1));
+
                                     i.putExtra("shopID", shopID);
                                     i.putExtra("orderID", data.getInt("id"));
+
                                     startActivity(i);
                                 } catch (JSONException e) {
                                     e.printStackTrace();

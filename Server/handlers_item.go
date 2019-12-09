@@ -10,7 +10,12 @@ import (
 
 func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetItems())
+	items, readError := GetItems()
+	if readError != nil {
+		ErrorHandler(readError.Error, readError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(items)
 }
 
 func GetItemHandler(w http.ResponseWriter, r *http.Request) {

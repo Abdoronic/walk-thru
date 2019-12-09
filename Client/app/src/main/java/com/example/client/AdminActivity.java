@@ -32,8 +32,8 @@ public class AdminActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin);
         signInButton = findViewById(R.id.customerSignUpButton);
-        usernameTextView = findViewById(R.id.emailText);
-        passwordTextView = findViewById(R.id.passwordText);
+        usernameTextView = findViewById(R.id.emailTextView);
+        passwordTextView = findViewById(R.id.passwordTextView);
 
         signInButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v) {
@@ -49,8 +49,11 @@ public class AdminActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         Intent i = new Intent(getApplicationContext(), ShopViewItemsActivity.class);
                         try {
-                            i.putExtra("name",response.getString("name"));
                             i.putExtra("id",response.getInt("id"));
+                            i.putExtra("name",response.getString("name"));
+                            i.putExtra("location",response.getString("location"));
+                            i.putExtra("adminUsername",response.getString("adminUsername"));
+                            i.putExtra("adminPassword",response.getString("adminPassword"));
 
                         } catch (JSONException e) {
                             e.printStackTrace();

@@ -10,7 +10,12 @@ import (
 
 func GetShopsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetShops())
+	shops, readError := GetShops()
+	if readError != nil {
+		ErrorHandler(readError.Error, readError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(shops)
 }
 
 func GetShopHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +117,12 @@ func ViewPendingOrdersHandler(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("Invalid ID", 400, w, r)
 		return
 	}
-	json.NewEncoder(w).Encode(ViewPendingOrders(id))
+	var orders, getError = ViewPendingOrders(id)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(orders)
 }
 
 func ViewDeliveredOrdersHandler(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +133,12 @@ func ViewDeliveredOrdersHandler(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler("Invalid ID", 400, w, r)
 		return
 	}
-	json.NewEncoder(w).Encode(ViewDeliveredOrders(id))
+	var orders, getError = ViewDeliveredOrders(id)
+	if getError != nil {
+		ErrorHandler(getError.Error, getError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(orders)
 }
 
 func DeliverOrderHandler(w http.ResponseWriter, r *http.Request) {

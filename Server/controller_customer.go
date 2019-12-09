@@ -15,7 +15,7 @@ import (
 	"github.com/stripe/stripe-go/token"
 )
 
-func GetCustomers() []Customer {
+func GetCustomers() ([]Customer, *Error) {
 	var customer Customer
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -24,7 +24,7 @@ func GetCustomers() []Customer {
 	customers, err := db.Query(sqlStatement)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer customers.Close()
 
@@ -33,11 +33,14 @@ func GetCustomers() []Customer {
 		err = customers.Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allCustomers = append(allCustomers, customer)
 	}
-	return allCustomers
+	if allCustomers == nil {
+		return nil, &Error{Status: 404, Error: "No Customers Exist"}
+	}
+	return allCustomers, nil
 }
 
 func GetCustomer(id int) (*Customer, *Error) {
@@ -70,7 +73,7 @@ func CreateCustomer(r *http.Request) (*Customer, *Error) {
 	err = db.QueryRow(sqlStatement, customer.Email, customer.FirstName, customer.LastName, customer.Password, customer.CreditCardNumber, customer.CreditCardExpiryDate, customer.CreditCardCVV).Scan(&customer.ID, &customer.Email, &customer.FirstName, &customer.LastName, &customer.Password, &customer.CreditCardNumber, &customer.CreditCardExpiryDate, &customer.CreditCardCVV)
 	if err != nil {
 		glog.Error(err)
-		return nil, &Error{Status: 500, Error: "Email already exists"}
+		return nil, &Error{Status: 500, Error: err.Error()}
 	}
 	return &customer, nil
 }
@@ -127,7 +130,35 @@ func DeleteCustomer(id int) (*Customer, *Error) {
 	return &customer, nil
 }
 
-func ViewItems(id int) []Item {
+func ViewCustomerOrders(id int) ([]Order, *Error) {
+	var order Order
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	sqlStatement := `SELECT * FROM "Order" WHERE CustomerID = $1;`
+	orders, err := db.Query(sqlStatement, id)
+	if err != nil {
+		glog.Error(err)
+		return nil, nil
+	}
+	defer orders.Close()
+
+	var allOrders []Order
+	for orders.Next() {
+		err = orders.Scan(&order.ID, &order.Delivered, &order.Price, &order.Date, &order.CustomerID, &order.ShopID)
+		if err != nil {
+			glog.Error(err)
+			return nil, nil
+		}
+		allOrders = append(allOrders, order)
+	}
+	if allOrders == nil {
+		return nil, &Error{Status: 404, Error: "No Orders Exist"}
+	}
+	return allOrders, nil
+}
+
+func ViewItems(id int) ([]Item, *Error) {
 	var item Item
 	db := ConnectToDatabase()
 	defer db.Close()
@@ -136,7 +167,7 @@ func ViewItems(id int) []Item {
 	items, err := db.Query(sqlStatement, id)
 	if err != nil {
 		glog.Error(err)
-		return nil
+		return nil, nil
 	}
 	defer items.Close()
 
@@ -145,11 +176,14 @@ func ViewItems(id int) []Item {
 		err = items.Scan(&item.ID, &item.Name, &item.Type, &item.Price, &item.Description, &item.ImageURL, &item.ShopID)
 		if err != nil {
 			glog.Error(err)
-			return nil
+			return nil, nil
 		}
 		allItems = append(allItems, item)
 	}
-	return allItems
+	if allItems == nil {
+		return nil, &Error{Status: 404, Error: "No Items Exist"}
+	}
+	return allItems, nil
 }
 
 // As a Customer i can create an Order.
@@ -271,9 +305,9 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 	//Start Payment
 	cardParams := &stripe.TokenParams{
 		Card: &stripe.CardParams{
-			Number:   stripe.String(strconv.Itoa(customer.CreditCardNumber)),
-			ExpMonth: stripe.String(customer.CreditCardExpiryDate[:2]),
-			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:]),
+			Number:   stripe.String(customer.CreditCardNumber),
+			ExpMonth: stripe.String(customer.CreditCardExpiryDate[5:7]),
+			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:4]),
 			CVC:      stripe.String(strconv.Itoa(customer.CreditCardCVV))},
 		// Number:   stripe.String("4242424242424242"),
 		// ExpMonth: stripe.String("12"),
@@ -316,8 +350,102 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 	return order, nil
 }
 
+func pingCreditCard(number, expiryDate, cvv string) *Error {
+	stripe.Key = GetConfig().StripeKey
+	cardParams := &stripe.TokenParams{
+		Card: &stripe.CardParams{
+			Number:   stripe.String(number),
+			ExpMonth: stripe.String(expiryDate[5:7]),
+			ExpYear:  stripe.String(expiryDate[2:4]),
+			CVC:      stripe.String(cvv)},
+	}
+	cardToken, err := token.New(cardParams)
+
+	if err != nil {
+		glog.Error(err)
+		return &Error{Status: 500, Error: "Invaild credit card info"}
+	}
+
+	params := &stripe.ChargeParams{
+		Amount:      stripe.Int64(int64(50 * 20)),
+		Currency:    stripe.String(string(stripe.CurrencyEGP)),
+		Description: stripe.String("Order Payment"),
+	}
+	params.SetSource(cardToken.ID)
+
+	_, err = charge.New(params)
+
+	if err != nil {
+		glog.Error(err)
+		return &Error{Status: 500, Error: "Failed Transaction"}
+	}
+	return nil
+}
+
+func CustomerAddItem(orderID int, itemID int, quantity int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	switch errQuery {
+	case sql.ErrNoRows:
+		{
+			// Insert into contain relation
+			createContainSQL := `INSERT INTO Contain (OrderID, ItemID, Quantity)
+				VALUES ($1, $2, $3)`
+			_, errContain := db.Exec(createContainSQL, orderID, itemID, quantity)
+			if errContain != nil {
+				glog.Error(errContain)
+				return nil, nil
+			}
+		}
+	case nil:
+		{
+			// update contain relation
+			updateContainSQL := `UPDATE Contain
+			SET Quantity = $3
+			WHERE ItemID = $1 AND OrderID = $2;`
+			_, errContain := db.Exec(updateContainSQL, itemID, orderID, quantity)
+			if errContain != nil {
+				glog.Error(errContain)
+				return nil, nil
+			}
+		}
+	default:
+		glog.Error(errQuery)
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		glog.Error(errItem)
+		return nil, errItem
+	}
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		glog.Error(errOrder)
+		return nil, errOrder
+	}
+	order.Price = order.Price + (item.Price * float64(quantity)) - (float64(currentQuantity) * item.Price)
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		glog.Error(err)
+		return nil, nil
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		glog.Error(errOrderUpdate)
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
+}
+
 // As a Customer i can add items to my Order.
-func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+func CustomerAddItemIncremental(orderID int, itemID int, r *http.Request) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 
@@ -380,7 +508,56 @@ func CustomerAddItem(orderID int, itemID int, r *http.Request) (*Order, *Error) 
 }
 
 // As a Customer i can remove items from my Order.
+// As a Customer i can remove items from my Order.
 func CustomerRemoveItem(orderID int, itemID int, r *http.Request) (*Order, *Error) {
+	db := ConnectToDatabase()
+	defer db.Close()
+
+	var currentQuantity int
+	sqlStatement := `SELECT Quantity FROM Contain WHERE OrderID = $1 AND ItemID = $2;`
+	errQuery := db.QueryRow(sqlStatement, orderID, itemID).Scan(&currentQuantity)
+	if errQuery != nil {
+		glog.Error(errQuery)
+		return nil, nil
+	}
+	// get item price
+	item, errItem := GetItem(itemID)
+	if errItem != nil {
+		glog.Error(errItem)
+		return nil, errItem
+	}
+	// delete from contain relation
+	deleteContainSQL := `DELETE FROM Contain
+		WHERE ItemID = $1 AND OrderID = $2;`
+	_, errContain := db.Exec(deleteContainSQL, itemID, orderID)
+	if errContain != nil {
+		glog.Error(errContain)
+		return nil, &Error{Status: 500, Error: "Couldn't delete"}
+	}
+
+	// update order table
+	order, errOrder := GetOrder(orderID)
+	if errOrder != nil {
+		glog.Error(errOrder)
+		return nil, errOrder
+	}
+	order.Price = order.Price - (item.Price * float64(currentQuantity))
+	modifiedBody, err := json.Marshal(order)
+	if err != nil {
+		glog.Error(err)
+		return nil, nil
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(modifiedBody))
+	r.ContentLength = int64(len(modifiedBody))
+	updatedOrder, errOrderUpdate := UpdateOrder(orderID, r)
+	if errOrderUpdate != nil {
+		glog.Error(errOrderUpdate)
+		return nil, errOrderUpdate
+	}
+	return updatedOrder, nil
+}
+
+func CustomerRemoveItemIncremental(orderID int, itemID int, r *http.Request) (*Order, *Error) {
 	db := ConnectToDatabase()
 	defer db.Close()
 

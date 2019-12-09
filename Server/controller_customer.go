@@ -297,8 +297,8 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 	cardParams := &stripe.TokenParams{
 		Card: &stripe.CardParams{
 			Number:   stripe.String(strconv.Itoa(customer.CreditCardNumber)),
-			ExpMonth: stripe.String(customer.CreditCardExpiryDate[:2]),
-			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:]),
+			ExpMonth: stripe.String(customer.CreditCardExpiryDate[5:7]),
+			ExpYear:  stripe.String(customer.CreditCardExpiryDate[2:4]),
 			CVC:      stripe.String(strconv.Itoa(customer.CreditCardCVV))},
 		// Number:   stripe.String("4242424242424242"),
 		// ExpMonth: stripe.String("12"),
@@ -339,6 +339,38 @@ func Checkout(customerID int, orderID int, shopID int, r *http.Request) (*Order,
 
 	order, _ = GetOrder(orderID)
 	return order, nil
+}
+
+func pingCreditCard(number, expiryDate, cvv string) *Error {
+	stripe.Key = GetConfig().StripeKey
+	cardParams := &stripe.TokenParams{
+		Card: &stripe.CardParams{
+			Number:   stripe.String(number),
+			ExpMonth: stripe.String(expiryDate[5:7]),
+			ExpYear:  stripe.String(expiryDate[2:4]),
+			CVC:      stripe.String(cvv)},
+	}
+	cardToken, err := token.New(cardParams)
+
+	if err != nil {
+		glog.Error(err)
+		return &Error{Status: 500, Error: "Invaild credit card info"}
+	}
+
+	params := &stripe.ChargeParams{
+		Amount:      stripe.Int64(int64(50 * 20)),
+		Currency:    stripe.String(string(stripe.CurrencyEGP)),
+		Description: stripe.String("Order Payment"),
+	}
+	params.SetSource(cardToken.ID)
+
+	_, err = charge.New(params)
+
+	if err != nil {
+		glog.Error(err)
+		return &Error{Status: 500, Error: "Failed Transaction"}
+	}
+	return nil
 }
 
 func CustomerAddItem(orderID int, itemID int, quantity int, r *http.Request) (*Order, *Error) {

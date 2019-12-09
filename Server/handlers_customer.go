@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 )
 
@@ -123,6 +124,28 @@ func ViewOrderItemsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(items)
+}
+
+func pingCreaditCardHandler(w http.ResponseWriter, r *http.Request) {
+	type Card struct {
+		Number string `json:"number"`
+		Date   string `json:"date"`
+		CVV    string `json:"cvv"`
+	}
+	w.Header().Set("Content-Type", "application/json")
+	var card Card
+	err := json.NewDecoder(r.Body).Decode(&card)
+	if err != nil {
+		glog.Error(err)
+		ErrorHandler("Invalid Data", 400, w, r)
+		return
+	}
+	var cardError = pingCreditCard(card.Number, card.Date, card.CVV)
+	if cardError != nil {
+		ErrorHandler(cardError.Error, cardError.Status, w, r)
+		return
+	}
+	json.NewEncoder(w).Encode(card)
 }
 
 func CheckoutHandler(w http.ResponseWriter, r *http.Request) {
